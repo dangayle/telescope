@@ -18,6 +18,8 @@ import {
 } from '../src/validation.js';
 
 import { normalizeCLIConfig } from '../src/config.js';
+import { parseWithSchema } from '../src/index.js';
+import { InvalidArgumentError } from 'commander';
 
 import type { CLIOptions } from '../src/types.js';
 
@@ -521,5 +523,60 @@ describe('PositiveFloatSchema', () => {
 
   it('rejects non-numeric strings', () => {
     expect(() => PositiveFloatSchema.parse('fast')).toThrow();
+  });
+});
+
+describe('parseWithSchema', () => {
+  it('returns a parsed integer for valid input', () => {
+    expect(parseWithSchema(PositiveIntSchema, '42', '--width')).toBe(42);
+  });
+
+  it('returns a parsed float for valid input', () => {
+    expect(parseWithSchema(PositiveFloatSchema, '4.5', '--cpuThrottle')).toBe(4.5);
+  });
+
+  it('throws InvalidArgumentError for non-numeric --width', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, 'eight', '--width'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for non-numeric --height', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, 'tall', '--height'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for non-numeric --frameRate', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, 'fast', '--frameRate'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for non-numeric --timeout', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, 'never', '--timeout'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for non-numeric --cpuThrottle', () => {
+    expect(() => parseWithSchema(PositiveFloatSchema, 'turbo', '--cpuThrottle'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('includes the bad value and flag name in the error message', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, 'abc', '--width'))
+      .toThrow(/abc.*--width/);
+  });
+
+  it('throws InvalidArgumentError for zero (not positive)', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, '0', '--width'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for negative number', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, '-5', '--height'))
+      .toThrow(InvalidArgumentError);
+  });
+
+  it('throws InvalidArgumentError for float where int expected', () => {
+    expect(() => parseWithSchema(PositiveIntSchema, '3.5', '--frameRate'))
+      .toThrow(InvalidArgumentError);
   });
 });

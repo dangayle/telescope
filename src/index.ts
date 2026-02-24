@@ -1,4 +1,4 @@
-import { Command, Option } from 'commander';
+import { Command, Option, InvalidArgumentError } from 'commander';
 const program = new Command();
 import { BrowserConfig } from './browsers.js';
 import { TestRunner } from './testRunner.js';
@@ -7,6 +7,15 @@ import { log } from './helpers.js';
 import { normalizeCLIConfig } from './config.js';
 import { DEFAULT_OPTIONS } from './defaultOptions.js';
 import { PositiveIntSchema, PositiveFloatSchema } from './schemas.js';
+import type { ZodType } from 'zod';
+
+export function parseWithSchema<T>(schema: ZodType<T>, value: string, flag: string): T {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    throw new InvalidArgumentError(`'${value}' is not a valid ${flag} value.`);
+  }
+  return result.data;
+}
 import type {
   LaunchOptions,
   BrowserConfigOptions,
@@ -216,7 +225,7 @@ export default function browserAgent(): void {
     )
     .addOption(
       new Option('--cpuThrottle <number>', 'CPU throttling factor')
-        .argParser((v) => PositiveFloatSchema.parse(v)),
+        .argParser((v) => parseWithSchema(PositiveFloatSchema, v, '--cpuThrottle')),
     )
     .addOption(
       new Option(
@@ -238,12 +247,12 @@ export default function browserAgent(): void {
     .addOption(
       new Option('--width <int>', 'Viewport width, in pixels')
         .default(DEFAULT_OPTIONS.width)
-        .argParser((v) => PositiveIntSchema.parse(v)),
+        .argParser((v) => parseWithSchema(PositiveIntSchema, v, '--width')),
     )
     .addOption(
       new Option('--height <int>', 'Viewport height, in pixels')
         .default(DEFAULT_OPTIONS.height)
-        .argParser((v) => PositiveIntSchema.parse(v)),
+        .argParser((v) => parseWithSchema(PositiveIntSchema, v, '--height')),
     )
     .addOption(
       new Option(
@@ -251,7 +260,7 @@ export default function browserAgent(): void {
         'Filmstrip frame rate, in frames per second',
       )
         .default(DEFAULT_OPTIONS.frameRate)
-        .argParser((v) => PositiveIntSchema.parse(v)),
+        .argParser((v) => parseWithSchema(PositiveIntSchema, v, '--frameRate')),
     )
     .addOption(
       new Option('--disableJS', 'Disable JavaScript').default(
@@ -275,7 +284,7 @@ export default function browserAgent(): void {
         'Maximum time (in milliseconds) to wait for test to complete',
       )
         .default(DEFAULT_OPTIONS.timeout)
-        .argParser((v) => PositiveIntSchema.parse(v)),
+        .argParser((v) => parseWithSchema(PositiveIntSchema, v, '--timeout')),
     )
     .addOption(
       new Option('--html', 'Generate HTML report').default(
