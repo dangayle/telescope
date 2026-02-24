@@ -7,6 +7,8 @@ import {
   FirefoxPrefsSchema,
   OverrideHostSchema,
   StringArraySchema,
+  PositiveIntSchema,
+  PositiveFloatSchema,
 } from '../src/schemas.js';
 
 import {
@@ -422,5 +424,102 @@ describe('backward compat', () => {
       block: ["[ 'one', 'two' ]"],
     };
     expect(() => normalizeCLIConfig(options)).toThrow(/Problem parsing/);
+  });
+
+  it('uses numeric width directly (no string parsing needed)', () => {
+    const options: CLIOptions = {
+      url: 'https://example.com',
+      width: 1920,
+    };
+    const result = normalizeCLIConfig(options);
+    expect(result.width).toBe(1920);
+  });
+
+  it('falls back to default when width is undefined', () => {
+    const result = normalizeCLIConfig({ url: 'https://example.com' });
+    expect(result.width).toBe(1366);
+  });
+
+  it('uses cpuThrottle as a number directly', () => {
+    const options: CLIOptions = {
+      url: 'https://example.com',
+      cpuThrottle: 4,
+    };
+    const result = normalizeCLIConfig(options);
+    expect(result.cpuThrottle).toBe(4);
+  });
+
+  it('passes flags array directly to args', () => {
+    const options: CLIOptions = {
+      url: 'https://example.com',
+      flags: ['--disable-gpu', '--headless'],
+    };
+    const result = normalizeCLIConfig(options);
+    expect(result.args).toEqual(['--disable-gpu', '--headless']);
+  });
+
+  it('empty flags array produces empty args', () => {
+    const options: CLIOptions = {
+      url: 'https://example.com',
+      flags: [],
+    };
+    const result = normalizeCLIConfig(options);
+    expect(result.args).toEqual([]);
+  });
+});
+
+describe('PositiveIntSchema', () => {
+  it('parses a valid integer string', () => {
+    expect(PositiveIntSchema.parse('42')).toBe(42);
+  });
+
+  it('parses a number directly', () => {
+    expect(PositiveIntSchema.parse(10)).toBe(10);
+  });
+
+  it('rejects zero', () => {
+    expect(() => PositiveIntSchema.parse('0')).toThrow();
+  });
+
+  it('rejects negative numbers', () => {
+    expect(() => PositiveIntSchema.parse('-5')).toThrow();
+  });
+
+  it('rejects floats', () => {
+    expect(() => PositiveIntSchema.parse('3.5')).toThrow();
+  });
+
+  it('rejects non-numeric strings', () => {
+    expect(() => PositiveIntSchema.parse('abc')).toThrow();
+  });
+
+  it('rejects empty string', () => {
+    expect(() => PositiveIntSchema.parse('')).toThrow();
+  });
+});
+
+describe('PositiveFloatSchema', () => {
+  it('parses a valid float string', () => {
+    expect(PositiveFloatSchema.parse('4.5')).toBe(4.5);
+  });
+
+  it('parses an integer string', () => {
+    expect(PositiveFloatSchema.parse('2')).toBe(2);
+  });
+
+  it('parses a number directly', () => {
+    expect(PositiveFloatSchema.parse(3.14)).toBe(3.14);
+  });
+
+  it('rejects zero', () => {
+    expect(() => PositiveFloatSchema.parse('0')).toThrow();
+  });
+
+  it('rejects negative numbers', () => {
+    expect(() => PositiveFloatSchema.parse('-1.5')).toThrow();
+  });
+
+  it('rejects non-numeric strings', () => {
+    expect(() => PositiveFloatSchema.parse('fast')).toThrow();
   });
 });

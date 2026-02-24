@@ -22,10 +22,10 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   const config: LaunchOptions = {
     url: options.url,
     browser: (options.browser as BrowserName) || DEFAULT_OPTIONS.browser,
-    width: parseInt(String(options.width)) || DEFAULT_OPTIONS.width,
-    height: parseInt(String(options.height)) || DEFAULT_OPTIONS.height,
-    frameRate: parseInt(String(options.frameRate)) || DEFAULT_OPTIONS.frameRate,
-    timeout: parseInt(String(options.timeout)) || DEFAULT_OPTIONS.timeout,
+    width: options.width ?? DEFAULT_OPTIONS.width,
+    height: options.height ?? DEFAULT_OPTIONS.height,
+    frameRate: options.frameRate ?? DEFAULT_OPTIONS.frameRate,
+    timeout: options.timeout ?? DEFAULT_OPTIONS.timeout,
     blockDomains: options.blockDomains || DEFAULT_OPTIONS.blockDomains,
     block: options.block || DEFAULT_OPTIONS.block,
     disableJS: options.disableJS || DEFAULT_OPTIONS.disableJS,
@@ -74,14 +74,14 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
     config.overrideHost = parseCLIOption('--overrideHost', options.overrideHost, OverrideHostSchema);
   }
 
-  // Convert flags string to array
-  if (typeof options.flags === 'string') {
-    config.args = options.flags.split(',');
+  // flags already parsed to string[] by argParser
+  if (options.flags) {
+    config.args = options.flags;
   }
 
-  // Handle cpuThrottle
+  // cpuThrottle already parsed to number by argParser
   if (options.cpuThrottle) {
-    config.cpuThrottle = parseFloat(options.cpuThrottle);
+    config.cpuThrottle = options.cpuThrottle;
   }
 
   if (options.block) {

@@ -601,26 +601,27 @@ declare global {
 // ============================================================================
 
 /**
- * Raw CLI options from Commander.js (all strings)
+ * Raw CLI options from Commander.js
+ * Numeric fields are parsed at the CLI boundary via argParser.
  */
 export interface CLIOptions {
   url: string;
   browser?: string;
   headers?: string;
   cookies?: string;
-  flags?: string;
+  flags?: string[];
   blockDomains?: string[];
   block?: string[];
   firefoxPrefs?: string;
-  cpuThrottle?: string;
+  cpuThrottle?: number;
   connectionType?: string;
-  width?: string;
-  height?: string;
-  frameRate?: string | number;
+  width?: number;
+  height?: number;
+  frameRate?: number;
   disableJS?: boolean;
   debug?: boolean;
   auth?: string;
-  timeout?: string | number;
+  timeout?: number;
   html?: boolean;
   openHtml?: boolean;
   list?: boolean;

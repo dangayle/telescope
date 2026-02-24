@@ -31,3 +31,6 @@ export const FirefoxPrefsSchema = z.record(
 export const OverrideHostSchema = z.record(z.string(), z.string());
 
 export const StringArraySchema = z.array(z.string());
+
+export const PositiveIntSchema = z.coerce.number().int().positive();
+export const PositiveFloatSchema = z.coerce.number().positive();

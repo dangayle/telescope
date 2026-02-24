@@ -6,6 +6,7 @@ import { ChromeRunner } from './chromeRunner.js';
 import { log } from './helpers.js';
 import { normalizeCLIConfig } from './config.js';
 import { DEFAULT_OPTIONS } from './defaultOptions.js';
+import { PositiveIntSchema, PositiveFloatSchema } from './schemas.js';
 import type {
   LaunchOptions,
   BrowserConfigOptions,
@@ -182,7 +183,7 @@ export default function browserAgent(): void {
       new Option(
         '-f, --flags <string>',
         'A comma separated list of Chromium flags to launch Chrome with. See: https://peter.sh/experiments/chromium-command-line-switches/',
-      ),
+      ).argParser((v) => v.length === 0 ? [] : v.split(',').filter(Boolean)),
     )
     .addOption(
       new Option(
@@ -213,7 +214,10 @@ export default function browserAgent(): void {
         'Any Firefox User Preferences to apply (Firefox only). Example: \'{"network.trr.mode": 2}\'',
       ),
     )
-    .addOption(new Option('--cpuThrottle <int>', 'CPU throttling factor'))
+    .addOption(
+      new Option('--cpuThrottle <number>', 'CPU throttling factor')
+        .argParser((v) => PositiveFloatSchema.parse(v)),
+    )
     .addOption(
       new Option(
         '--connectionType <string>',
@@ -232,20 +236,22 @@ export default function browserAgent(): void {
         ]),
     )
     .addOption(
-      new Option('--width <int>', 'Viewport width, in pixels').default(
-        String(DEFAULT_OPTIONS.width),
-      ),
+      new Option('--width <int>', 'Viewport width, in pixels')
+        .default(DEFAULT_OPTIONS.width)
+        .argParser((v) => PositiveIntSchema.parse(v)),
     )
     .addOption(
-      new Option('--height <int>', 'Viewport height, in pixels').default(
-        String(DEFAULT_OPTIONS.height),
-      ),
+      new Option('--height <int>', 'Viewport height, in pixels')
+        .default(DEFAULT_OPTIONS.height)
+        .argParser((v) => PositiveIntSchema.parse(v)),
     )
     .addOption(
       new Option(
         '--frameRate <int>',
         'Filmstrip frame rate, in frames per second',
-      ).default(DEFAULT_OPTIONS.frameRate),
+      )
+        .default(DEFAULT_OPTIONS.frameRate)
+        .argParser((v) => PositiveIntSchema.parse(v)),
     )
     .addOption(
       new Option('--disableJS', 'Disable JavaScript').default(
@@ -267,7 +273,9 @@ export default function browserAgent(): void {
       new Option(
         '--timeout <int>',
         'Maximum time (in milliseconds) to wait for test to complete',
-      ).default(DEFAULT_OPTIONS.timeout),
+      )
+        .default(DEFAULT_OPTIONS.timeout)
+        .argParser((v) => PositiveIntSchema.parse(v)),
     )
     .addOption(
       new Option('--html', 'Generate HTML report').default(
