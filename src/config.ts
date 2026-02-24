@@ -17,7 +17,14 @@ import {
 
 import { DEFAULT_OPTIONS } from './defaultOptions.js';
 
-// Normalize raw CLI options into a typed LaunchOptions config.
+/**
+ * Normalize CLI options into a typed LaunchOptions config.
+ * Parses JSON string options (cookies, headers, auth, etc.) via Zod schemas,
+ * applies defaults, and maps CLI field names to internal config fields.
+ *
+ * @param options - CLI options from Commander (numeric fields already typed via argParser)
+ * @returns Normalized config object with correct types and defaults applied
+ */
 export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   const config: LaunchOptions = {
     url: options.url,
@@ -121,6 +128,14 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   return config;
 }
 
+/**
+ * Parse the command line parameters options whether they be a JSON array or
+ * comma separated strings.
+ *
+ * @param flagName - The CLI flag name (for error messages)
+ * @param choices - List of options to a command line parameter
+ * @returns The parsed list of options
+ */
 function parseJSONArrayOrCommaSeparatedStrings(flagName: string, choices: string[]): string[] {
   const chosen: string[] = [];
 
