@@ -5,17 +5,19 @@ import type {
   ConnectionType,
   BrowserName,
 } from './types.js';
+import { parseCLIOption, parseUnknown } from './validation.js';
+import {
+  CookiesSchema,
+  HeadersSchema,
+  AuthSchema,
+  FirefoxPrefsSchema,
+  OverrideHostSchema,
+  StringArraySchema,
+} from './schemas.js';
 
 import { DEFAULT_OPTIONS } from './defaultOptions.js';
 
-/**
- * Normalize options from any source (CLI or programmatic).
- * Converts types, parses JSON strings, and applies defaults.
- * Handles both CLI string inputs and programmatic object inputs.
- *
- * @param options - Test options (raw from CLI or programmatic)
- * @returns Normalized config object with correct types and defaults applied
- */
+// Normalize raw CLI options into a typed LaunchOptions config.
 export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   const config: LaunchOptions = {
     url: options.url,
@@ -42,15 +44,15 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
 
   // Parse JSON strings from CLI (pass through objects from programmatic)
   if (options.cookies) {
-    config.cookies = JSON.parse(options.cookies);
+    config.cookies = parseCLIOption('--cookies', options.cookies, CookiesSchema);
   }
 
   if (options.headers) {
-    config.headers = JSON.parse(options.headers);
+    config.headers = parseCLIOption('--headers', options.headers, HeadersSchema);
   }
 
   if (options.auth) {
-    config.auth = JSON.parse(options.auth) as HTTPCredentials;
+    config.auth = parseCLIOption('--auth', options.auth, AuthSchema);
   }
 
   if (options.delay) {
@@ -65,11 +67,11 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   }
 
   if (options.firefoxPrefs) {
-    config.firefoxPrefs = JSON.parse(options.firefoxPrefs);
+    config.firefoxPrefs = parseCLIOption('--firefoxPrefs', options.firefoxPrefs, FirefoxPrefsSchema);
   }
 
   if (options.overrideHost) {
-    config.overrideHost = JSON.parse(options.overrideHost);
+    config.overrideHost = parseCLIOption('--overrideHost', options.overrideHost, OverrideHostSchema);
   }
 
   // Convert flags string to array
@@ -84,7 +86,7 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
 
   if (options.block) {
     try {
-      config.block = parseJSONArrayOrCommaSeparatedStrings(options.block);
+      config.block = parseJSONArrayOrCommaSeparatedStrings('--block', options.block);
     } catch (err) {
       throw new Error(
         `Problem parsing "--block" options - ${(err as Error).message}`,
@@ -95,6 +97,7 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   if (options.blockDomains) {
     try {
       config.blockDomains = parseJSONArrayOrCommaSeparatedStrings(
+        '--blockDomains',
         options.blockDomains,
       );
     } catch (err) {
@@ -118,20 +121,14 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
   return config;
 }
 
-/**
- * Parse the command line parameters options whether they be a JSON array or
- * comma separated strings.
- *
- * @param choices - List of options to a command line parameter
- * @returns The parsed list of options
- */
-function parseJSONArrayOrCommaSeparatedStrings(choices: string[]): string[] {
+function parseJSONArrayOrCommaSeparatedStrings(flagName: string, choices: string[]): string[] {
   const chosen: string[] = [];
 
   choices.forEach(opt_group => {
     if (opt_group.includes('[')) {
       // Looks like a JSON array
-      chosen.push(...(JSON.parse(opt_group) as string[]));
+      const parsed: unknown = JSON.parse(opt_group);
+      chosen.push(...parseUnknown(flagName, parsed, StringArraySchema));
     } else {
       opt_group.split(/,/).forEach(opt => {
         if (opt) {
