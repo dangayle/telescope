@@ -4,6 +4,7 @@
  */
 
 import type { BrowserContext, HTTPCredentials } from 'playwright';
+import type { DelayMethod } from './delay.js';
 
 // ============================================================================
 // Cookie Types
@@ -175,6 +176,8 @@ export interface LaunchOptions {
   uploadUrl?: string | null;
   dry?: boolean;
   command?: string[];
+  delay?: Record<string, number>;
+  delayUsing?: DelayMethod;
 }
 
 /**
@@ -199,6 +202,8 @@ export interface DefaultOptions {
   zip: boolean;
   uploadUrl: string | null;
   dry: boolean;
+  delay: Record<string, number>;
+  delayUsing: DelayMethod;
 }
 
 // ============================================================================
@@ -623,4 +628,6 @@ export interface CLIOptions {
   zip?: boolean;
   uploadUrl?: string;
   dry?: boolean;
+  delay?: string;
+  delayUsing?: string;
 }
