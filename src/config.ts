@@ -11,10 +11,14 @@ import { DEFAULT_OPTIONS } from './defaultOptions.js';
 
 /**
  * Normalize CLI options into a typed LaunchOptions config.
- * JSON and numeric options are already parsed by Commander argParser callbacks.
  * Applies defaults and maps CLI field names to internal config fields.
  *
- * @param options - CLI options from Commander (JSON and numeric fields already typed via argParser)
+ * This function is not part of the public API -- only browserAgent() calls it,
+ * and the programmatic API (launchTest, Telescope) takes LaunchOptions directly.
+ * Since the only caller is the CLI path, inputs are already validated by
+ * Commander's argParser callbacks before they reach here.
+ *
+ * @param options - CLI options (typed fields already validated by Commander)
  * @returns Normalized config object with correct types and defaults applied
  */
 export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
