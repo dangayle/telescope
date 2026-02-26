@@ -6,6 +6,7 @@ import {
   AuthSchema,
   FirefoxPrefsSchema,
   OverrideHostSchema,
+  DelaySchema,
   StringArraySchema,
   PositiveIntSchema,
   PositiveFloatSchema,
@@ -18,8 +19,7 @@ import {
 } from '../src/validation.js';
 
 import { normalizeCLIConfig } from '../src/config.js';
-import { parseWithSchema } from '../src/index.js';
-import { InvalidArgumentError } from 'commander';
+import { parseWithSchema } from '../src/validation.js';
 
 import type { CLIOptions } from '../src/types.js';
 
@@ -107,6 +107,34 @@ describe('--cookies', () => {
       const result = parseCLIOption('--cookies', '[]', CookiesSchema);
       expect(result).toEqual([]);
     });
+
+    it('accepts a cookie with url instead of domain+path', () => {
+      const input = '{"name":"a","value":"b","url":"https://example.com"}';
+      const result = parseCLIOption('--cookies', input, CookiesSchema);
+      expect(result).toEqual({
+        name: 'a',
+        value: 'b',
+        url: 'https://example.com',
+      });
+    });
+
+    it('accepts a cookie with only name and value (testRunner fills in url)', () => {
+      const input = '{"name":"a","value":"b"}';
+      const result = parseCLIOption('--cookies', input, CookiesSchema);
+      expect(result).toEqual({ name: 'a', value: 'b' });
+    });
+
+    it('accepts a cookie without domain (testRunner fills in url)', () => {
+      const input = '{"name":"a","value":"b","path":"/"}';
+      const result = parseCLIOption('--cookies', input, CookiesSchema);
+      expect(result).toEqual({ name: 'a', value: 'b', path: '/' });
+    });
+
+    it('accepts a cookie without path (testRunner fills in url)', () => {
+      const input = '{"name":"a","value":"b","domain":"d"}';
+      const result = parseCLIOption('--cookies', input, CookiesSchema);
+      expect(result).toEqual({ name: 'a', value: 'b', domain: 'd' });
+    });
   });
 
   describe('invalid inputs', () => {
@@ -119,20 +147,6 @@ describe('--cookies', () => {
 
     it('rejects a cookie missing value', () => {
       const input = '{"name":"a","domain":"d","path":"/"}';
-      expect(() => parseCLIOption('--cookies', input, CookiesSchema)).toThrow(
-        /Invalid data/,
-      );
-    });
-
-    it('rejects a cookie missing domain', () => {
-      const input = '{"name":"a","value":"b","path":"/"}';
-      expect(() => parseCLIOption('--cookies', input, CookiesSchema)).toThrow(
-        /Invalid data/,
-      );
-    });
-
-    it('rejects a cookie missing path', () => {
-      const input = '{"name":"a","value":"b","domain":"d"}';
       expect(() => parseCLIOption('--cookies', input, CookiesSchema)).toThrow(
         /Invalid data/,
       );
@@ -322,6 +336,30 @@ describe('--overrideHost', () => {
   });
 });
 
+describe('--delay', () => {
+  describe('valid inputs', () => {
+    it('accepts a delay mapping', () => {
+      const input = '{".css$": 2000, ".js$": 5000}';
+      const result = parseCLIOption('--delay', input, DelaySchema);
+      expect(result).toEqual({ '.css$': 2000, '.js$': 5000 });
+    });
+
+    it('accepts an empty object', () => {
+      const result = parseCLIOption('--delay', '{}', DelaySchema);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('invalid inputs', () => {
+    it('rejects a non-number value', () => {
+      const input = '{".css$": "slow"}';
+      expect(() =>
+        parseCLIOption('--delay', input, DelaySchema),
+      ).toThrow(/Invalid data for "--delay"/);
+    });
+  });
+});
+
 describe('parseUnknown with StringArraySchema', () => {
   describe('valid inputs', () => {
     it('accepts a string array', () => {
@@ -392,32 +430,16 @@ describe('backward compat', () => {
     expect(result.url).toBe('https://example.com');
   });
 
-  it('parses cookies from a JSON string', () => {
+  it('passes through already-parsed cookies', () => {
     const options: CLIOptions = {
       url: 'https://example.com',
-      cookies: '[{"name":"a","value":"b","domain":"d","path":"/"}]',
+      cookies: [{ name: 'a', value: 'b', domain: 'd', path: '/' }],
     };
     const result = normalizeCLIConfig(options);
     expect(Array.isArray(result.cookies)).toBe(true);
     expect(result.cookies).toEqual([
       { name: 'a', value: 'b', domain: 'd', path: '/' },
     ]);
-  });
-
-  it('throws on invalid JSON for cookies', () => {
-    const options: CLIOptions = {
-      url: 'https://example.com',
-      cookies: 'not json',
-    };
-    expect(() => normalizeCLIConfig(options)).toThrow(/Invalid JSON/);
-  });
-
-  it('throws on valid JSON but wrong shape for cookies', () => {
-    const options: CLIOptions = {
-      url: 'https://example.com',
-      cookies: '{"wrong":"shape"}',
-    };
-    expect(() => normalizeCLIConfig(options)).toThrow(/Invalid data/);
   });
 
   it('throws on bad JSON in block array items', () => {
@@ -535,29 +557,29 @@ describe('parseWithSchema', () => {
     expect(parseWithSchema(PositiveFloatSchema, '4.5', '--cpuThrottle')).toBe(4.5);
   });
 
-  it('throws InvalidArgumentError for non-numeric --width', () => {
+  it('throws for non-numeric --width', () => {
     expect(() => parseWithSchema(PositiveIntSchema, 'eight', '--width'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for non-numeric --height', () => {
+  it('throws for non-numeric --height', () => {
     expect(() => parseWithSchema(PositiveIntSchema, 'tall', '--height'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for non-numeric --frameRate', () => {
+  it('throws for non-numeric --frameRate', () => {
     expect(() => parseWithSchema(PositiveIntSchema, 'fast', '--frameRate'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for non-numeric --timeout', () => {
+  it('throws for non-numeric --timeout', () => {
     expect(() => parseWithSchema(PositiveIntSchema, 'never', '--timeout'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for non-numeric --cpuThrottle', () => {
+  it('throws for non-numeric --cpuThrottle', () => {
     expect(() => parseWithSchema(PositiveFloatSchema, 'turbo', '--cpuThrottle'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
   it('includes the bad value and flag name in the error message', () => {
@@ -565,18 +587,18 @@ describe('parseWithSchema', () => {
       .toThrow(/abc.*--width/);
   });
 
-  it('throws InvalidArgumentError for zero (not positive)', () => {
+  it('throws for zero (not positive)', () => {
     expect(() => parseWithSchema(PositiveIntSchema, '0', '--width'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for negative number', () => {
+  it('throws for negative number', () => {
     expect(() => parseWithSchema(PositiveIntSchema, '-5', '--height'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 
-  it('throws InvalidArgumentError for float where int expected', () => {
+  it('throws for float where int expected', () => {
     expect(() => parseWithSchema(PositiveIntSchema, '3.5', '--frameRate'))
-      .toThrow(InvalidArgumentError);
+      .toThrow();
   });
 });

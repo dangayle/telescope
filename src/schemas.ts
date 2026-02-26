@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const CookieSchema = z.object({
   name: z.string(),
   value: z.string(),
-  domain: z.string(),
-  path: z.string(),
+  domain: z.string().optional(),
+  path: z.string().optional(),
   expires: z.number().optional(),
   httpOnly: z.boolean().optional(),
   secure: z.boolean().optional(),
@@ -29,6 +29,8 @@ export const FirefoxPrefsSchema = z.record(
 );
 
 export const OverrideHostSchema = z.record(z.string(), z.string());
+
+export const DelaySchema = z.record(z.string(), z.number());
 
 export const StringArraySchema = z.array(z.string());
 

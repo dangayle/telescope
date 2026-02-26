@@ -601,18 +601,18 @@ declare global {
 // ============================================================================
 
 /**
- * Raw CLI options from Commander.js
- * Numeric fields are parsed at the CLI boundary via argParser.
+ * CLI options from Commander.js
+ * Numeric and JSON fields are parsed at the CLI boundary via argParser.
  */
 export interface CLIOptions {
   url: string;
   browser?: string;
-  headers?: string;
-  cookies?: string;
+  headers?: Record<string, string>;
+  cookies?: Cookie | Cookie[];
   flags?: string[];
   blockDomains?: string[];
   block?: string[];
-  firefoxPrefs?: string;
+  firefoxPrefs?: Record<string, string | number | boolean>;
   cpuThrottle?: number;
   connectionType?: string;
   width?: number;
@@ -620,15 +620,15 @@ export interface CLIOptions {
   frameRate?: number;
   disableJS?: boolean;
   debug?: boolean;
-  auth?: string;
+  auth?: HTTPCredentials | false;
   timeout?: number;
   html?: boolean;
   openHtml?: boolean;
   list?: boolean;
-  overrideHost?: string;
+  overrideHost?: Record<string, string>;
   zip?: boolean;
   uploadUrl?: string;
   dry?: boolean;
-  delay?: string;
-  delayUsing?: string;
+  delay?: Record<string, number>;
+  delayUsing?: DelayMethod;
 }

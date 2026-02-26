@@ -1,28 +1,20 @@
-import type { HTTPCredentials } from 'playwright';
 import type {
   LaunchOptions,
   CLIOptions,
   ConnectionType,
   BrowserName,
 } from './types.js';
-import { parseCLIOption, parseUnknown } from './validation.js';
-import {
-  CookiesSchema,
-  HeadersSchema,
-  AuthSchema,
-  FirefoxPrefsSchema,
-  OverrideHostSchema,
-  StringArraySchema,
-} from './schemas.js';
+import { parseUnknown } from './validation.js';
+import { StringArraySchema } from './schemas.js';
 
 import { DEFAULT_OPTIONS } from './defaultOptions.js';
 
 /**
  * Normalize CLI options into a typed LaunchOptions config.
- * Parses JSON string options (cookies, headers, auth, etc.) via Zod schemas,
- * applies defaults, and maps CLI field names to internal config fields.
+ * JSON and numeric options are already parsed by Commander argParser callbacks.
+ * Applies defaults and maps CLI field names to internal config fields.
  *
- * @param options - CLI options from Commander (numeric fields already typed via argParser)
+ * @param options - CLI options from Commander (JSON and numeric fields already typed via argParser)
  * @returns Normalized config object with correct types and defaults applied
  */
 export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
@@ -49,36 +41,33 @@ export function normalizeCLIConfig(options: CLIOptions): LaunchOptions {
     delayUsing: DEFAULT_OPTIONS.delayUsing,
   };
 
-  // Parse JSON strings from CLI (pass through objects from programmatic)
+  // Already-parsed JSON options: pass through directly
   if (options.cookies) {
-    config.cookies = parseCLIOption('--cookies', options.cookies, CookiesSchema);
+    config.cookies = options.cookies;
   }
 
   if (options.headers) {
-    config.headers = parseCLIOption('--headers', options.headers, HeadersSchema);
+    config.headers = options.headers;
   }
 
   if (options.auth) {
-    config.auth = parseCLIOption('--auth', options.auth, AuthSchema);
+    config.auth = options.auth;
   }
 
   if (options.delay) {
-    config.delay = JSON.parse(options.delay) as Record<string, number>;
+    config.delay = options.delay;
   }
 
-  if (
-    options.delayUsing &&
-    (options.delayUsing === 'fulfill' || options.delayUsing === 'continue')
-  ) {
+  if (options.delayUsing) {
     config.delayUsing = options.delayUsing;
   }
 
   if (options.firefoxPrefs) {
-    config.firefoxPrefs = parseCLIOption('--firefoxPrefs', options.firefoxPrefs, FirefoxPrefsSchema);
+    config.firefoxPrefs = options.firefoxPrefs;
   }
 
   if (options.overrideHost) {
-    config.overrideHost = parseCLIOption('--overrideHost', options.overrideHost, OverrideHostSchema);
+    config.overrideHost = options.overrideHost;
   }
 
   // flags already parsed to string[] by argParser
